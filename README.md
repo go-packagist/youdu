@@ -24,10 +24,15 @@ func main() {
 		AesKey: "3444444444444444444444444444444444",
 	})
 
-	err := yd.Message().SendText("11111", "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	yd.Message().SendText("11111", "test")
+	yd.Message().Send(&youdu.TextMessage{
+		ToUser:  "11111",
+		ToDept:  "",
+		MsgType: youdu.MsgTypeText,
+		Text: &youdu.TextItem{
+			Content: "test",
+		},
+	})
 }
 
 ```
