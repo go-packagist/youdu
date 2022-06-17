@@ -62,7 +62,7 @@ func (m *Media) Upload(fileType string, filePath string) (string, error) {
 		return "", err
 	}
 	tmpFile := "/tmp/youdu-" + fileInfo.Name() + time.Now().Format("20060102150405") + ".tmp"
-	// defer os.Remove(tmpFile)
+	defer os.Remove(tmpFile)
 	if err := os.WriteFile(tmpFile, []byte(fileEncrypt), 0644); err != nil {
 		return "", err
 	}
