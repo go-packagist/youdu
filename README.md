@@ -33,6 +33,20 @@ func main() {
 			Content: "test",
 		},
 	})
+
+	mediaId, err := yd.Media().Upload(youdu.MediaTypeImage, "test.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	yd.Message().Send(&youdu.ImageMessage{
+		ToUser:  "11111",
+		ToDept:  "",
+		MsgType: youdu.MsgTypeImage,
+		Image: &youdu.MediaItem{
+			MediaId: mediaId,
+		},
+	})
+
 }
 
 ```
