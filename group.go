@@ -8,6 +8,7 @@ import (
 
 const (
 	groupCreateUrl = "/cgi/group/create"
+	groupInfoUrl   = "/cgi/group/info"
 	groupListUrl   = "/cgi/group/list"
 )
 
@@ -80,11 +81,57 @@ func (g *Group) Update(id int, name string) {
 
 }
 
-func (g *Group) Info(id int) {
-
+type GroupInfo struct {
+	Id           string      `json:"id"`
+	Name         string      `json:"name"`
+	Admins       interface{} `json:"admins"`
+	BelongDeptId int         `json:"belongDeptId"`
+	IsDeptGroup  bool        `json:"isDeptGroup"`
+	Master       int         `json:"master"`
+	Members      []struct {
+		Account string `json:"account"`
+		Name    string `json:"name"`
+		Mobile  string `json:"mobile"`
+	} `json:"members"`
 }
 
-type GroupInfo struct {
+func (g *Group) Info(groupId string) (*GroupInfo, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := g.config.GetHttp().Get(groupInfoUrl+"?accessToken="+accessToken, map[string]string{
+		"id": groupId,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.IsSuccess() {
+		return nil, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return nil, err
+	}
+
+	decrypt, err := g.config.GetEncryptor().Decrypt(jsonRet["encrypt"].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	var v *GroupInfo
+	if err = decrypt.Unmarshal(&v); err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+type GroupItem struct {
 	Id           string `json:"id"`
 	Name         string `json:"name"`
 	Version      int    `json:"version"`
@@ -92,7 +139,7 @@ type GroupInfo struct {
 	BelongDeptId int    `json:"belongDeptId"`
 }
 
-func (g *Group) List(userId ...string) ([]GroupInfo, error) {
+func (g *Group) List(userId ...string) ([]GroupItem, error) {
 	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
 		return nil, err
@@ -123,7 +170,7 @@ func (g *Group) List(userId ...string) ([]GroupInfo, error) {
 		return nil, err
 	}
 
-	var v map[string][]GroupInfo
+	var v map[string][]GroupItem
 	if err := decrypt.Unmarshal(&v); err != nil {
 		return nil, err
 	}
