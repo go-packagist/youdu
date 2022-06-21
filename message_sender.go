@@ -3,10 +3,14 @@ package youdu
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
-const msgSendUrl = "/cgi/msg/send"
+const (
+	msgSendUrl   = "/cgi/msg/send"
+	popWindowUrl = "/cgi/popwindow"
+)
 
 // see:https://youdu.im/doc/api/c01_00003.html#_7
 const (
@@ -194,4 +198,98 @@ func (m *MessageSender) SendText(toUser, content string, toDept ...string) error
 			Content: content,
 		},
 	})
+}
+
+func (m *MessageSender) SendImage(toUser, mediaId string, toDept ...string) error {
+	if len(toDept) == 0 {
+		toDept = []string{""}
+	}
+
+	return m.Send(&ImageMessage{
+		ToUser:  toUser,
+		ToDept:  toDept[0],
+		MsgType: MsgTypeImage,
+		Image: &MediaItem{
+			MediaId: mediaId,
+		},
+	})
+}
+
+func (m *MessageSender) SendFile(toUser, mediaId string, toDept ...string) error {
+	if len(toDept) == 0 {
+		toDept = []string{""}
+	}
+
+	return m.Send(&FileMessage{
+		ToUser:  toUser,
+		ToDept:  toDept[0],
+		MsgType: MsgTypeFile,
+		File: &MediaItem{
+			MediaId: mediaId,
+		},
+	})
+}
+
+type PopWindowItem struct {
+	Url      string `json:"url"`
+	Tip      string `json:"tip"`
+	Title    string `json:"title"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+	Duration int    `json:"duration"`
+	Position int    `json:"position"`
+	NoticeId string `json:"notice_id"`
+	PopMode  int    `json:"pop_mode"`
+}
+
+type PopWindowMessage struct {
+	ToUser    string         `json:"toUser"`
+	ToDept    string         `json:"toDept"`
+	PopWindow *PopWindowItem `json:"popWindow"`
+}
+
+func (m *MessageSender) Popwindow(message Message) error {
+	if _, ok := message.(*PopWindowMessage); !ok {
+		return errors.New("message must be PopWindowMessage")
+	}
+
+	// accessToken, err := m.config.GetAccessTokenProvider().GetAccessToken()
+	// if err != nil {
+	// 	return err
+	// }
+
+	messageJson, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	encrypt, err := m.config.GetEncryptor().Encrypt(string(messageJson))
+	if err != nil {
+		return err
+	}
+
+	resp, err := m.config.GetHttp().Post(popWindowUrl, map[string]interface{}{
+		"app_id":      m.config.AppId,
+		"msg_encrypt": encrypt,
+	})
+	if err != nil {
+		return err
+	}
+
+	if !resp.IsSuccess() {
+		return errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(jsonRet)
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return errors.New(jsonRet["errmsg"].(string))
+	}
+
+	return nil
 }

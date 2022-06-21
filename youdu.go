@@ -6,6 +6,8 @@ type Youdu struct {
 	dept          *Dept
 	messageSender *MessageSender
 	media         *Media
+	user          *User
+	session       *Session
 }
 
 func New(config *Config) *Youdu {
@@ -36,6 +38,22 @@ func (y *Youdu) Dept() *Dept {
 	}
 
 	return y.dept
+}
+
+func (y *Youdu) User() *User {
+	if y.user == nil {
+		y.user = NewUser(y.config)
+	}
+
+	return y.user
+}
+
+func (y *Youdu) Session() *Session {
+	if y.session == nil {
+		y.session = NewSession(y.config)
+	}
+
+	return y.session
 }
 
 func (y *Youdu) GetAccessToken() (string, error) {
