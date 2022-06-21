@@ -25,9 +25,9 @@ func NewSession(config *Config) *Session {
 	}
 }
 
-// CreateSession 创建一个会话
+// Create 创建一个会话
 // members 第一个默认为创建者
-func (s *Session) CreateSession(title string, members []string) (*session.Session, error) {
+func (s *Session) Create(title string, members []string) (*session.Session, error) {
 	if len(members) < 3 {
 		return nil, errors.New("members must be at least 3")
 	}
@@ -84,8 +84,8 @@ func (s *Session) CreateSession(title string, members []string) (*session.Sessio
 	return v, nil
 }
 
-// GetSession 获取会话信息
-func (s *Session) GetSession(sessionId string) (*session.Session, error) {
+// Get 获取会话信息
+func (s *Session) Get(sessionId string) (*session.Session, error) {
 	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
 		return nil, err
@@ -121,8 +121,8 @@ func (s *Session) GetSession(sessionId string) (*session.Session, error) {
 	return v, nil
 }
 
-// UpdateSession 更新会话信息
-func (s *Session) UpdateSession(sessionId, opUser, title string, addMembers, delMembers []string) (*session.Session, error) {
+// Update 更新会话信息
+func (s *Session) Update(sessionId, opUser, title string, addMembers, delMembers []string) (*session.Session, error) {
 	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
 		return nil, err
@@ -178,6 +178,7 @@ func (s *Session) UpdateSession(sessionId, opUser, title string, addMembers, del
 	return v, nil
 }
 
+// Send 发送消息
 func (s *Session) Send(message session.Message) error {
 	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
