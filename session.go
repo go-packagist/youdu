@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-packagist/youdu/session"
 	"strconv"
 )
 
@@ -11,6 +12,7 @@ const (
 	sessionCreateUrl = "/cgi/session/create"
 	sessionGetUrl    = "/cgi/session/get"
 	sessionUpdateUrl = "/cgi/session/update"
+	sessionSendUrl   = "/cgi/session/send"
 )
 
 type Session struct {
@@ -23,20 +25,9 @@ func NewSession(config *Config) *Session {
 	}
 }
 
-type SessionInfo struct {
-	SessionId  string   `json:"sessionId"`
-	Type       string   `json:"type"`
-	Owner      string   `json:"owner"`
-	Title      string   `json:"title"`
-	Version    int      `json:"version"`
-	Member     []string `json:"member"`
-	LastMsgId  int      `json:"lastMsgId"`
-	ActiveTime int      `json:"activeTime"`
-}
-
 // CreateSession 创建一个会话
 // members 第一个默认为创建者
-func (s *Session) CreateSession(title string, members []string) (*SessionInfo, error) {
+func (s *Session) CreateSession(title string, members []string) (*session.Session, error) {
 	if len(members) < 3 {
 		return nil, errors.New("members must be at least 3")
 	}
@@ -85,7 +76,7 @@ func (s *Session) CreateSession(title string, members []string) (*SessionInfo, e
 		return nil, err
 	}
 
-	var v *SessionInfo
+	var v *session.Session
 	if err := decrypt.Unmarshal(&v); err != nil {
 		return nil, err
 	}
@@ -94,7 +85,7 @@ func (s *Session) CreateSession(title string, members []string) (*SessionInfo, e
 }
 
 // GetSession 获取会话信息
-func (s *Session) GetSession(sessionId string) (*SessionInfo, error) {
+func (s *Session) GetSession(sessionId string) (*session.Session, error) {
 	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
 		return nil, err
@@ -122,7 +113,7 @@ func (s *Session) GetSession(sessionId string) (*SessionInfo, error) {
 		return nil, err
 	}
 
-	var v *SessionInfo
+	var v *session.Session
 	if err := decrypt.Unmarshal(&v); err != nil {
 		return nil, err
 	}
@@ -131,7 +122,7 @@ func (s *Session) GetSession(sessionId string) (*SessionInfo, error) {
 }
 
 // UpdateSession 更新会话信息
-func (s *Session) UpdateSession(sessionId, opUser, title string, addMembers, delMembers []string) (*SessionInfo, error) {
+func (s *Session) UpdateSession(sessionId, opUser, title string, addMembers, delMembers []string) (*session.Session, error) {
 	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {
 		return nil, err
@@ -179,10 +170,52 @@ func (s *Session) UpdateSession(sessionId, opUser, title string, addMembers, del
 
 	fmt.Println(decrypt)
 
-	var v *SessionInfo
+	var v *session.Session
 	if err := decrypt.Unmarshal(&v); err != nil {
 		return nil, err
 	}
 
 	return v, nil
+}
+
+func (s *Session) Send(message session.Message) error {
+	accessToken, err := s.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return err
+	}
+
+	bodyJson, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	encrypt, err := s.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.config.GetHttp().Post(sessionSendUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   s.config.AppId,
+		"buin":    s.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !resp.IsSuccess() {
+		return errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return err
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return errors.New(jsonRet["errmsg"].(string))
+	}
+
+	return nil
 }
