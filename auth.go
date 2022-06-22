@@ -1,8 +1,8 @@
 package youdu
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -20,7 +20,28 @@ func NewAuth(config *Config) *Auth {
 	}
 }
 
-func (a *Auth) Identify(token string) (i interface{}, err error) {
+type IdentifyResp struct {
+	Buin   int `json:"buin"`
+	Status struct {
+		Code      int    `json:"code"`
+		Message   string `json:"message"`
+		CreatedAt string `json:"createdAt"`
+	} `json:"status"`
+	UserInfo struct {
+		Gid        int    `json:"gid"`
+		Account    string `json:"account"`
+		ChsName    string `json:"chsName"`
+		EngName    string `json:"engName"`
+		Gender     int    `json:"gender"`
+		OrgId      int    `json:"orgId"`
+		Mobile     string `json:"mobile"`
+		Phone      string `json:"phone"`
+		Email      string `json:"email"`
+		CustomAttr string `json:"customAttr"`
+	} `json:"userInfo"`
+}
+
+func (a *Auth) Identify(token string) (i IdentifyResp, err error) {
 	resp, err := a.config.GetHttp().Get(identifyUrl, map[string]string{
 		"token": token,
 	})
@@ -33,29 +54,9 @@ func (a *Auth) Identify(token string) (i interface{}, err error) {
 		return
 	}
 
-	jsonRet, err := resp.Json()
-	if err != nil {
-		return
-	}
-
-	fmt.Println(jsonRet)
-
-	if jsonRet["errcode"].(float64) != 0 {
-		err = errors.New(jsonRet["errmsg"].(string))
+	if err = json.Unmarshal(resp.Body(), &i); err != nil {
 		return
 	}
 
 	return
-
-	// decrypt, err := m.config.GetEncryptor().Decrypt(jsonRet["encrypt"].(string))
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// var v MediaInfo
-	// if err = decrypt.Unmarshal(&v); err != nil {
-	// 	return
-	// }
-	//
-	// return v, nil
 }
