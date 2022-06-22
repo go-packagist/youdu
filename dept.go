@@ -5,7 +5,10 @@ import (
 	"strconv"
 )
 
-const deptListUrl = "/cgi/dept/list"
+const (
+	deptListUrl  = "/cgi/dept/list"
+	deptGetIdUrl = "/cgi/dept/getid"
+)
 
 type Dept struct {
 	config *Config
@@ -24,6 +27,7 @@ func NewDept(config *Config) *Dept {
 	}
 }
 
+// GetList 获取部门列表
 func (d *Dept) GetList(depId int) ([]DeptItem, error) {
 	accessToken, err := d.config.GetAccessTokenProvider().GetAccessToken()
 	if err != nil {

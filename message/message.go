@@ -1,12 +1,4 @@
-package youdu
-
-import (
-	"encoding/json"
-	"errors"
-	"strconv"
-)
-
-const msgSendUrl = "/cgi/msg/send"
+package message
 
 // see:https://youdu.im/doc/api/c01_00003.html#_7
 const (
@@ -23,6 +15,13 @@ type Message interface {
 }
 
 var _ Message = (*TextMessage)(nil)
+var _ Message = (*ImageMessage)(nil)
+var _ Message = (*FileMessage)(nil)
+var _ Message = (*MpNewsMessage)(nil)
+var _ Message = (*LinkMessage)(nil)
+var _ Message = (*ExLinkMessage)(nil)
+var _ Message = (*SmsMessage)(nil)
+var _ Message = (*MailMessage)(nil)
 
 type TextItem struct {
 	Content string `json:"content"`
@@ -95,15 +94,28 @@ type ExLinkMessage struct {
 	ExLink  *[]ExLinkItem `json:"exlink"`
 }
 
-// type SysMessage struct {
-// 	ToUser string `json:"toUser"`
-// 	ToDept string `json:"toDept"`
-// 	ToAll  struct {
-// 		OnlyOnline bool `json:"only_online"`
-// 	} `json:"toAll"`
-// 	MsgType string `json:"msgType"`
-// 	SysMsg
-// }
+type SysMessage struct {
+	ToUser string `json:"toUser"`
+	ToDept string `json:"toDept"`
+	ToAll  struct {
+		OnliyOnline bool `json:"onliyOnline"`
+	} `json:"toAll"`
+	MsgType string `json:"msgType"`
+	SysMsg  struct {
+		Title       string `json:"title"`
+		PopDuration int    `json:"popDuration"`
+		Msg         []struct {
+			Text struct {
+				Content string `json:"content"`
+			} `json:"text,omitempty"`
+			Link struct {
+				Title  string `json:"title"`
+				Url    string `json:"url"`
+				Action int    `json:"action"`
+			} `json:"link,omitempty"`
+		} `json:"msg"`
+	} `json:"sysMsg"`
+}
 
 type SmsMessage struct {
 	ToUser  string `json:"toUser"`
@@ -130,68 +142,20 @@ type MailMessage struct {
 	}
 }
 
-type MessageSender struct {
-	config *Config
+type PopWindowItem struct {
+	Url      string `json:"url"`
+	Tip      string `json:"tip"`
+	Title    string `json:"title"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+	Duration int    `json:"duration"`
+	Position int    `json:"position"`
+	NoticeId string `json:"notice_id"`
+	PopMode  int    `json:"pop_mode"`
 }
 
-func NewMessageSender(config *Config) *MessageSender {
-	return &MessageSender{
-		config: config,
-	}
-}
-
-func (m *MessageSender) Send(message Message) error {
-	accessToken, err := m.config.GetAccessTokenProvider().GetAccessToken()
-	if err != nil {
-		return err
-	}
-
-	messageJson, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-
-	encrypt, err := m.config.GetEncryptor().Encrypt(string(messageJson))
-	if err != nil {
-		return err
-	}
-
-	resp, err := m.config.GetHttp().Post(msgSendUrl+"?accessToken="+accessToken, map[string]interface{}{
-		"appId":   m.config.AppId,
-		"buin":    m.config.Buin,
-		"encrypt": encrypt,
-	})
-	if err != nil {
-		return err
-	}
-
-	if !resp.IsSuccess() {
-		return errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
-	}
-
-	jsonRet, err := resp.Json()
-	if err != nil {
-		return err
-	}
-
-	if jsonRet["errcode"].(float64) != 0 {
-		return errors.New(jsonRet["errmsg"].(string))
-	}
-
-	return nil
-}
-
-func (m *MessageSender) SendText(toUser, content string, toDept ...string) error {
-	if len(toDept) == 0 {
-		toDept = []string{""}
-	}
-
-	return m.Send(&TextMessage{
-		ToUser:  toUser,
-		ToDept:  toDept[0],
-		MsgType: MsgTypeText,
-		Text: &TextItem{
-			Content: content,
-		},
-	})
+type PopWindowMessage struct {
+	ToUser    string         `json:"toUser"`
+	ToDept    string         `json:"toDept"`
+	PopWindow *PopWindowItem `json:"popWindow"`
 }

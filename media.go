@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-const mediaUploadUrl = "/cgi/media/upload"
+const (
+	mediaUploadUrl = "/cgi/media/upload"
+	mediaGetUrl    = "/cgi/media/get"
+	mediaSearchUrl = "/cgi/media/search"
+)
 
 const (
 	MediaTypeImage = "image"
@@ -104,4 +108,136 @@ func (m *Media) Upload(fileType string, filePath string) (string, error) {
 	}
 
 	return v["mediaId"], err
+}
+
+type MediaGetResp struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
+	Body string `json:"body"`
+}
+
+func (m *Media) Get(mediaId string) (r MediaGetResp, err error) {
+	accessToken, err := m.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return
+	}
+
+	bodyJson, err := json.Marshal(map[string]string{
+		"mediaId": mediaId,
+	})
+	if err != nil {
+		return
+	}
+
+	encrypt, err := m.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return
+	}
+
+	resp, err := m.config.GetHttp().Post(mediaGetUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   m.config.AppId,
+		"buin":    m.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return
+	}
+
+	if !resp.IsSuccess() {
+		err = errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+		return
+	}
+
+	// decrypt body
+	decryptBody, err := m.config.GetEncryptor().Decrypt(resp.String())
+	if err != nil {
+		return
+	}
+
+	// decript header
+	encryptHeader, ok := resp.Header()["Encrypt"]
+	if !ok {
+		err = errors.New("encrypt not found")
+		return
+	}
+
+	decryptHeader, err := m.config.GetEncryptor().Decrypt(encryptHeader[0])
+	if err != nil {
+		return
+	}
+
+	var v MediaGetResp
+	if err = decryptHeader.Unmarshal(&v); err != nil {
+		return
+	}
+
+	r.Name = v.Name
+	r.Size = v.Size
+	r.Body = decryptBody.Data
+
+	err = nil
+
+	return
+}
+
+type MediaInfo struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
+}
+
+func (m *Media) Search(mediaId string) (i MediaInfo, err error) {
+	accessToken, err := m.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return
+	}
+
+	bodyJson, err := json.Marshal(map[string]string{
+		"mediaId": mediaId,
+	})
+	if err != nil {
+		return
+	}
+
+	encrypt, err := m.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return
+	}
+
+	resp, err := m.config.GetHttp().Post(mediaSearchUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   m.config.AppId,
+		"buin":    m.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return
+	}
+
+	if !resp.IsSuccess() {
+		err = errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+		return
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		err = errors.New(jsonRet["errmsg"].(string))
+		return
+	}
+
+	decrypt, err := m.config.GetEncryptor().Decrypt(jsonRet["encrypt"].(string))
+	if err != nil {
+		return
+	}
+
+	var v MediaInfo
+	if err = decrypt.Unmarshal(&v); err != nil {
+		return
+	}
+
+	return v, nil
 }
