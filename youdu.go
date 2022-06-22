@@ -9,6 +9,7 @@ type Youdu struct {
 	user          *User
 	session       *Session
 	group         *Group
+	auth          *Auth
 }
 
 // New 创建一个 Youdu 实例
@@ -70,6 +71,14 @@ func (y *Youdu) Group() *Group {
 	}
 
 	return y.group
+}
+
+func (y *Youdu) Auth() *Auth {
+	if y.auth == nil {
+		y.auth = NewAuth(y.config)
+	}
+
+	return y.auth
 }
 
 // AccessToken 返回 accessToken

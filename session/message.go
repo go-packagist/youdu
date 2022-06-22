@@ -28,7 +28,7 @@ type TextMessage struct {
 }
 
 type MediaItem struct {
-	MediaId string `json:"mediaId"`
+	MediaId string `json:"media_id"`
 }
 
 type ImageMessage struct {
