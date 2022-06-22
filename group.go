@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	groupCreateUrl = "/cgi/group/create"
-	groupInfoUrl   = "/cgi/group/info"
-	groupListUrl   = "/cgi/group/list"
+	groupCreateUrl   = "/cgi/group/create"
+	groupInfoUrl     = "/cgi/group/info"
+	groupListUrl     = "/cgi/group/list"
+	groupIsMemberUrl = "/cgi/group/ismember"
 )
 
 type Group struct {
@@ -186,6 +187,44 @@ func (g *Group) RemoveMember(id int, userId int) {
 
 }
 
-func (g *Group) IsMember(id int, userId int) {
+func (g *Group) IsMember(groupId, userId string) (bool, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := g.config.GetHttp().Get(groupIsMemberUrl+"?accessToken="+accessToken, map[string]string{
+		"id":     groupId,
+		"userId": userId,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.IsSuccess() {
+		return false, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return false, err
+	}
+
+	if jsonRet["errcode"] != 0 {
+		return false, errors.New(jsonRet["errmsg"].(string))
+	}
+
+	decrypt, err := g.config.GetEncryptor().Decrypt(jsonRet["encrypt"].(string))
+	if err != nil {
+		return false, err
+	}
+
+	var v map[string]bool
+	if err := decrypt.Unmarshal(&v); err != nil {
+		return false, err
+	}
+
+	return v["belong"], nil
 
 }
