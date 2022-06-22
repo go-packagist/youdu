@@ -3,13 +3,13 @@ package youdu
 type Youdu struct {
 	config *Config
 
-	dept          *Dept
-	messageSender *MessageSender
-	media         *Media
-	user          *User
-	session       *Session
-	group         *Group
-	auth          *Auth
+	dept    *Dept
+	message *Message
+	media   *Media
+	user    *User
+	session *Session
+	group   *Group
+	auth    *Auth
 }
 
 // New 创建一个 Youdu 实例
@@ -20,12 +20,12 @@ func New(config *Config) *Youdu {
 }
 
 // Message 创建消息相关的实例
-func (y *Youdu) Message() *MessageSender {
-	if y.messageSender == nil {
-		y.messageSender = NewMessageSender(y.config)
+func (y *Youdu) Message() *Message {
+	if y.message == nil {
+		y.message = NewMessage(y.config)
 	}
 
-	return y.messageSender
+	return y.message
 }
 
 // Media 创建媒体相关的实例

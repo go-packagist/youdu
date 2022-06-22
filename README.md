@@ -15,6 +15,7 @@ package main
 
 import (
 	"github.com/go-packagist/youdu"
+	"github.com/go-packagist/youdu/message"
 	"log"
 )
 
@@ -27,24 +28,24 @@ func main() {
 	})
 
 	yd.Message().SendText("11111", "test")
-	yd.Message().Send(&youdu.TextMessage{
+	yd.Message().Send(&message.TextMessage{
 		ToUser:  "11111",
 		ToDept:  "",
-		MsgType: youdu.MsgTypeText,
-		Text: &youdu.TextItem{
+		MsgType: message.MsgTypeText,
+		Text: &message.TextItem{
 			Content: "test",
 		},
 	})
 
-	mediaId, err := yd.Media().Upload(youdu.MediaTypeImage, "test.jpeg")
+	mediaId, err := yd.Media().Upload(message.MediaTypeImage, "test.jpeg")
 	if err != nil {
 		panic(err)
 	}
-	yd.Message().Send(&youdu.ImageMessage{
+	yd.Message().Send(&message.ImageMessage{
 		ToUser:  "11111",
 		ToDept:  "",
-		MsgType: youdu.MsgTypeImage,
-		Image: &youdu.MediaItem{
+		MsgType: message.MsgTypeImage,
+		Image: &message.MediaItem{
 			MediaId: mediaId,
 		},
 	})
