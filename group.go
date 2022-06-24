@@ -7,10 +7,14 @@ import (
 )
 
 const (
-	groupCreateUrl   = "/cgi/group/create"
-	groupInfoUrl     = "/cgi/group/info"
-	groupListUrl     = "/cgi/group/list"
-	groupIsMemberUrl = "/cgi/group/ismember"
+	groupCreateUrl    = "/cgi/group/create"
+	groupDeleteUrl    = "/cgi/group/delete"
+	groupUpdateUrl    = "/cgi/group/update"
+	groupInfoUrl      = "/cgi/group/info"
+	groupListUrl      = "/cgi/group/list"
+	groupAddMemberUrl = "/cgi/group/addmember"
+	groupDelMemberUrl = "/cgi/group/delmember"
+	groupIsMemberUrl  = "/cgi/group/ismember"
 )
 
 type Group struct {
@@ -74,12 +78,93 @@ func (g *Group) Create(name string) (string, error) {
 	return v["id"], nil
 }
 
-func (g *Group) Delete(id int) {
+func (g *Group) Delete(groupId string) (bool, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return false, err
+	}
 
+	bodyJson, err := json.Marshal(map[string]interface{}{
+		"id": groupId,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	encrypt, err := g.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := g.config.GetHttp().Post(groupDeleteUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   g.config.AppId,
+		"buin":    g.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.IsSuccess() {
+		return false, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return false, err
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return false, errors.New(jsonRet["errMsg"].(string))
+	}
+
+	return true, nil
 }
 
-func (g *Group) Update(id int, name string) {
+func (g *Group) Update(groupId, groupName string) (bool, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return false, err
+	}
 
+	bodyJson, err := json.Marshal(map[string]interface{}{
+		"id":   groupId,
+		"name": groupName,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	encrypt, err := g.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := g.config.GetHttp().Post(groupUpdateUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   g.config.AppId,
+		"buin":    g.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.IsSuccess() {
+		return false, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return false, err
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return false, errors.New(jsonRet["errMsg"].(string))
+	}
+
+	return true, nil
 }
 
 type GroupInfo struct {
@@ -179,12 +264,94 @@ func (g *Group) List(userId ...string) ([]GroupItem, error) {
 	return v["groupList"], nil
 }
 
-func (g *Group) AddMember(id int, userId int) {
+func (g *Group) AddMember(groupId string, userId ...string) (bool, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return false, err
+	}
 
+	bodyJson, err := json.Marshal(map[string]interface{}{
+		"id":       groupId,
+		"userList": userId,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	encrypt, err := g.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := g.config.GetHttp().Post(groupAddMemberUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   g.config.AppId,
+		"buin":    g.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.IsSuccess() {
+		return false, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return false, err
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return false, errors.New(jsonRet["errMsg"].(string))
+	}
+
+	return true, nil
 }
 
-func (g *Group) RemoveMember(id int, userId int) {
+func (g *Group) DelMember(groupId string, userId ...string) (bool, error) {
+	accessToken, err := g.config.GetAccessTokenProvider().GetAccessToken()
+	if err != nil {
+		return false, err
+	}
 
+	bodyJson, err := json.Marshal(map[string]interface{}{
+		"id":       groupId,
+		"userList": userId,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	encrypt, err := g.config.GetEncryptor().Encrypt(string(bodyJson))
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := g.config.GetHttp().Post(groupDelMemberUrl+"?accessToken="+accessToken, map[string]interface{}{
+		"appId":   g.config.AppId,
+		"buin":    g.config.Buin,
+		"encrypt": encrypt,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.IsSuccess() {
+		return false, errors.New("Response status code is " + strconv.Itoa(resp.StatusCode()))
+	}
+
+	jsonRet, err := resp.Json()
+	if err != nil {
+		return false, err
+	}
+
+	if jsonRet["errcode"].(float64) != 0 {
+		return false, errors.New(jsonRet["errMsg"].(string))
+	}
+
+	return true, nil
 }
 
 func (g *Group) IsMember(groupId, userId string) (bool, error) {
@@ -226,5 +393,4 @@ func (g *Group) IsMember(groupId, userId string) (bool, error) {
 	}
 
 	return v["belong"], nil
-
 }

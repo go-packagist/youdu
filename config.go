@@ -1,10 +1,13 @@
 package youdu
 
+import "strings"
+
 type Config struct {
 	Api    string
 	Buin   int
 	AppId  string
 	AesKey string
+	Path   string
 
 	encryptor           *encryptor
 	http                *Http
@@ -33,4 +36,17 @@ func (c *Config) GetAccessTokenProvider() *accessTokenProvider {
 	}
 
 	return c.accessTokenProvider
+}
+
+// GetPath 返回系统默认路径
+func (c *Config) GetPath() string {
+	if c.Path == "" {
+		c.Path = c.GetDefaultPath()
+	}
+
+	return strings.TrimRight(c.Path, "/")
+}
+
+func (c *Config) GetDefaultPath() string {
+	return "/tmp"
 }

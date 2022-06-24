@@ -37,7 +37,7 @@ func main() {
 		},
 	})
 
-	mediaId, err := yd.Media().Upload(message.MediaTypeImage, "test.jpeg")
+	mediaId, err := yd.Media().Upload(youdu.MediaTypeImage, "test.jpeg")
 	if err != nil {
 		panic(err)
 	}
