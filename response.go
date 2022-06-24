@@ -35,24 +35,6 @@ func (r *Response) Json() (map[string]interface{}, error) {
 	return v, nil
 }
 
-// func (r *Response) Decrypt() (*Response, error) {
-// 	v, err := r.Json()
-// 	if err != nil {
-// 		return r, err
-// 	}
-//
-// 	r.decryptResult, err = r.encryptor.Decrypt(v["encrypt"].(string))
-// 	if err != nil {
-// 		return r, err
-// 	}
-//
-// 	return r, nil
-// }
-
-// func (r *Response) DecryptResult() *DecryptResult {
-// 	return r.decryptResult
-// }
-
 func (r *Response) StatusCode() int {
 	return r.restyResponse.StatusCode()
 }
@@ -64,15 +46,3 @@ func (r *Response) Header() map[string][]string {
 func (r *Response) IsSuccess() bool {
 	return r.StatusCode() == 200
 }
-
-// func (r *Response) Cookies() []*resty.Cookie {
-// 	return r.restyResponse.Cookies()
-// }
-//
-// func (r *Response) ContentLength() int64 {
-// 	return r.restyResponse.ContentLength()
-// }
-//
-// func (r *Response) ContentType() string {
-// 	return r.restyResponse.ContentType()
-// }
