@@ -2,7 +2,7 @@
 
 <div align="center" style="padding: 30px 0;">
     <img src="logo.png" width="240">
-    <p>Golang Youdu SDK</p>
+    <p>Youdu Go SDK</p>
 </div>
 
 
