@@ -1,6 +1,9 @@
 # youdu
 
-<p align="center" style="padding: 30px 0;"><img src="logo.png" width="240"></p>
+<div align="center" style="padding: 30px 0;">
+    <img src="logo.png" width="240">
+    <p>Golang Youdu SDK</p>
+</div>
 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-packagist/youdu)](https://goreportcard.com/report/github.com/go-packagist/youdu)
