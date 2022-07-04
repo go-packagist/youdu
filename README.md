@@ -1,6 +1,6 @@
 # youdu
 
-<p align="center"><img src="logo.png" width="120"></p>
+<p align="center" style="padding: 30px 0;"><img src="logo.png" width="240"></p>
 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-packagist/youdu)](https://goreportcard.com/report/github.com/go-packagist/youdu)
