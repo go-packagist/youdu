@@ -1,8 +1,16 @@
 # youdu
 
+<p style="text-align: center"><img src="logo.png" width="120"></p>
+
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-packagist/youdu)](https://goreportcard.com/report/github.com/go-packagist/youdu)
+[![GoDoc](https://pkg.go.dev/badge/github.com/go-packagist/youdu)](https://pkg.go.dev/github.com/go-packagist/youdu)
+[![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
+
+
 [Feature](./todo.md)
 
-## Install
+## Installation
 
 ```bash
 go get github.com/go-packagist/youdu
