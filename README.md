@@ -3,12 +3,13 @@
 <div align="center" style="padding: 30px 0;">
     <img src="logo.png" width="240">
     <p>Golang Youdu SDK</p>
+    <p>
+    [![Go Report Card](https://goreportcard.com/badge/github.com/go-packagist/youdu)](https://goreportcard.com/report/github.com/go-packagist/youdu)
+    [![GoDoc](https://pkg.go.dev/badge/github.com/go-packagist/youdu)](https://pkg.go.dev/github.com/go-packagist/youdu)
+    [![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
+    </p>
 </div>
 
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/go-packagist/youdu)](https://goreportcard.com/report/github.com/go-packagist/youdu)
-[![GoDoc](https://pkg.go.dev/badge/github.com/go-packagist/youdu)](https://pkg.go.dev/github.com/go-packagist/youdu)
-[![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 
 
 [Feature](./todo.md)
