@@ -10,7 +10,7 @@ const (
 	MsgTypeVideo   = "video"
 	MsgTypeLink    = "link"
 	MsgTypeExtLink = "exlink"
-	MsgTypeSysMsg  = "sysMsg"
+	MsgTypeSys     = "sysMsg"
 	MsgTypeSms     = "sms"
 	MsgTypeMail    = "mail"
 )
@@ -104,36 +104,18 @@ type SysMessage struct {
 	ToAll  struct {
 		OnliyOnline bool `json:"onliyOnline"`
 	} `json:"toAll"`
-	MsgType string `json:"msgType"`
-	SysMsg  struct {
-		Title       string `json:"title"`
-		PopDuration int    `json:"popDuration"`
-		Msg         []struct {
-			Text struct {
-				Content string `json:"content"`
-			} `json:"text,omitempty"`
-			Link struct {
-				Title  string `json:"title"`
-				Url    string `json:"url"`
-				Action int    `json:"action"`
-			} `json:"link,omitempty"`
-		} `json:"msg"`
-	} `json:"sysMsg"`
+	MsgType string      `json:"msgType"`
+	SysMsg  *SysMsgItem `json:"sysMsg"`
 }
 
 type SysMsgItem struct {
-	Title       string `json:"title"`
-	PopDuration int    `json:"popDuration"`
-	Msg         []struct {
-		Text struct {
-			Content string `json:"content"`
-		} `json:"text,omitempty"`
-		Link struct {
-			Title  string `json:"title"`
-			Url    string `json:"url"`
-			Action int    `json:"action"`
-		} `json:"link,omitempty"`
-	} `json:"msg"`
+	Title       string           `json:"title"`
+	PopDuration int              `json:"popDuration"`
+	Msg         []*SysMsgItemMsg `json:"msg"`
+}
+type SysMsgItemMsg struct {
+	Text *TextItem `json:"text,omitempty"`
+	Link *LinkItem `json:"link,omitempty"`
 }
 
 type SmsMessage struct {
