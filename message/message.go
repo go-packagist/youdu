@@ -2,13 +2,17 @@ package message
 
 // see:https://youdu.im/doc/api/c01_00003.html#_7
 const (
-	MsgTypeText   = "text"
-	MsgTypeImage  = "image"
-	MsgTypeFile   = "file"
-	MsgTypeMpNews = "mpnews"
-	MsgTypeAudio  = "audio"
-	MsgTypeVideo  = "video"
-	MsgTypeLink   = "link"
+	MsgTypeText    = "text"
+	MsgTypeImage   = "image"
+	MsgTypeFile    = "file"
+	MsgTypeMpNews  = "mpnews"
+	MsgTypeAudio   = "audio"
+	MsgTypeVideo   = "video"
+	MsgTypeLink    = "link"
+	MsgTypeExtLink = "exlink"
+	MsgTypeSysMsg  = "sysMsg"
+	MsgTypeSms     = "sms"
+	MsgTypeMail    = "mail"
 )
 
 type Message interface {
@@ -115,6 +119,21 @@ type SysMessage struct {
 			} `json:"link,omitempty"`
 		} `json:"msg"`
 	} `json:"sysMsg"`
+}
+
+type SysMsgItem struct {
+	Title       string `json:"title"`
+	PopDuration int    `json:"popDuration"`
+	Msg         []struct {
+		Text struct {
+			Content string `json:"content"`
+		} `json:"text,omitempty"`
+		Link struct {
+			Title  string `json:"title"`
+			Url    string `json:"url"`
+			Action int    `json:"action"`
+		} `json:"link,omitempty"`
+	} `json:"msg"`
 }
 
 type SmsMessage struct {
