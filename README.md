@@ -1,5 +1,7 @@
 # youdu
 
+👻👻 **说明：该项目已捐赠至 [AddcnOS](https://github.com/addcnos/youdu) 维护**
+
 <div align="center" style="padding: 30px 0;">
     <img src="logo.png" width="240">
     <p>Youdu Go SDK</p>
