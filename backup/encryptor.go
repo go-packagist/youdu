@@ -1,4 +1,4 @@
-package youdu
+package backup
 
 import (
 	"bytes"
@@ -7,27 +7,40 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"io"
 )
 
-type Encryptor struct {
-	appid  string
-	aesKey string
+type DecryptResult struct {
+	encryptor *encryptor
+
+	AppId  string
+	Data   string
+	Length int32
+}
+
+func (d *DecryptResult) Unmarshal(v interface{}) error {
+	return json.Unmarshal([]byte(d.Data), &v)
+}
+
+// encryptor is used to encrypt and decrypt messages.
+// see: https://gist.github.com/STGDanny/03acf29a90684c2afc9487152324e832
+type encryptor struct {
+	config *Config
 	pkcs7  *Pkcs7
 }
 
-func NewEncryptor(appid, aesKey string) *Encryptor {
-	return &Encryptor{
-		appid:  appid,
-		aesKey: aesKey,
+func NewEncryptor(config *Config) *encryptor {
+	return &encryptor{
+		config: config,
 		pkcs7:  NewPkcs7(),
 	}
 }
 
-func (e *Encryptor) Encrypt(plaintext string) (string, error) {
-	// decode key
-	key, err := base64.StdEncoding.DecodeString(e.aesKey)
+func (e *encryptor) Encrypt(plaintext string) (string, error) {
+	// key
+	key, err := base64.StdEncoding.DecodeString(e.config.AesKey)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +60,7 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	plainText = append(plainText, randBs...)
 	plainText = append(plainText, lenBs...)
 	plainText = append(plainText, []byte(plaintext)...)
-	plainText = append(plainText, []byte(e.appid)...)
+	plainText = append(plainText, []byte(e.config.AppId)...)
 
 	// encrypt
 	block, err := aes.NewCipher(key)
@@ -63,43 +76,33 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	return base64.StdEncoding.EncodeToString(cipherText), nil
 }
 
-func (e *Encryptor) MustEncrypt(plaintext string) string {
-	ciphertext, err := e.Encrypt(plaintext)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return ciphertext
-}
-
-func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
+func (e *encryptor) Decrypt(ciphertext string) (*DecryptResult, error) {
 	// key
-	key, err := base64.StdEncoding.DecodeString(e.aesKey)
+	key, err := base64.StdEncoding.DecodeString(e.config.AesKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// cipherText
 	cipherText, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// len valid
 	if len(cipherText)%len(key) != 0 {
-		return "", errors.New("invalid ciphertext")
+		return nil, errors.New("invalid ciphertext")
 	}
 
 	// aes decrypt
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	blockMode := cipher.NewCBCDecrypter(block, iv)
@@ -108,37 +111,32 @@ func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
 	plainText = e.pkcs7.Unpadding(plainText)
 
 	// rawMessage
-	var length int32
-	if err := binary.Read(bytes.NewBuffer(plainText[16:20]), binary.BigEndian, &length); err != nil {
-		return "", err
+	result := &DecryptResult{}
+	if err := binary.Read(bytes.NewBuffer(plainText[16:20]), binary.BigEndian, &result.Length); err != nil {
+		return nil, err
 	}
-	if len(plainText) < int(20+length) {
-		return "", errors.New("invalid ciphertext")
+	result.Data = string(plainText[20 : 20+result.Length])
+	result.AppId = string(plainText[20+result.Length:])
+	if len(plainText) < int(20+result.Length) {
+		return nil, errors.New("invalid ciphertext")
 	}
 
-	return string(plainText[20 : 20+length]), nil
+	return result, err
 }
 
-func (e *Encryptor) MustDecrypt(ciphertext string) string {
-	plaintext, err := e.Decrypt(ciphertext)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return plaintext
-}
-
+// Pkcs7 is used to padding and unpadding messages.
 type Pkcs7 struct {
 	blockSize int
 }
 
+// NewPkcs7 is used to create a new Pkcs7.
 func NewPkcs7() *Pkcs7 {
 	return &Pkcs7{
 		blockSize: 32,
 	}
 }
 
+// Padding is used to padding messages.
 func (p *Pkcs7) Padding(content []byte) []byte {
 	padding := p.blockSize - (len(content) % p.blockSize)
 
@@ -151,6 +149,7 @@ func (p *Pkcs7) Padding(content []byte) []byte {
 	return append(content, padtext...)
 }
 
+// Unpadding is used to unpadding messages.
 func (p *Pkcs7) Unpadding(content []byte) []byte {
 	if len(content) == 0 {
 		return nil

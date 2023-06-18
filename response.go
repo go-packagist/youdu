@@ -1,48 +1,56 @@
 package youdu
 
 import (
+	"bytes"
 	"encoding/json"
-	"github.com/go-resty/resty/v2"
+	"fmt"
+	"io"
 )
 
 type Response struct {
-	restyResponse *resty.Response
-	encryptor     *encryptor
-
-	decryptResult *DecryptResult
+	Errcode int    `json:"errcode"`
+	Errmsg  string `json:"errmsg"`
+	Encrypt string `json:"encrypt"`
 }
 
-func NewResponse(restyResponse *resty.Response) *Response {
-	return &Response{
-		restyResponse: restyResponse,
-	}
-}
-
-func (r *Response) Body() []byte {
-	return r.restyResponse.Body()
-}
-
-func (r *Response) String() string {
-	return r.restyResponse.String()
-}
-
-func (r *Response) Json() (map[string]interface{}, error) {
-	var v map[string]interface{}
-	if err := json.Unmarshal(r.restyResponse.Body(), &v); err != nil {
-		return nil, err
+func (c *Client) decodeResponse(body io.Reader, v interface{}) error {
+	if v == nil {
+		return nil
 	}
 
-	return v, nil
+	if result, ok := v.(*string); ok {
+		return c.decodeString(body, result)
+	}
+
+	var (
+		resp    Response
+		decoder = json.NewDecoder(body)
+	)
+	if err := decoder.Decode(&resp); err != nil {
+		return decoder.Decode(v)
+	}
+
+	return c.decodeEncryptResponse(resp, v)
 }
 
-func (r *Response) StatusCode() int {
-	return r.restyResponse.StatusCode()
+func (c *Client) decodeEncryptResponse(resp Response, v interface{}) error {
+	if resp.Errcode != 0 {
+		return fmt.Errorf("errcode: %d, errmsg: %s", resp.Errcode, resp.Errmsg)
+	}
+
+	encrypt, err := c.encryptor.Decrypt(resp.Encrypt)
+	if err != nil {
+		return err
+	}
+
+	return json.NewDecoder(bytes.NewBufferString(encrypt)).Decode(v)
 }
 
-func (r *Response) Header() map[string][]string {
-	return r.restyResponse.Header()
-}
-
-func (r *Response) IsSuccess() bool {
-	return r.StatusCode() == 200
+func (c *Client) decodeString(body io.Reader, output *string) error {
+	b, err := io.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	*output = string(b)
+	return nil
 }

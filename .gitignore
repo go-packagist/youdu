@@ -15,3 +15,6 @@
 vendor/
 .idea
 youdu_test.go
+/backup/
+/message/
+/client_test.go
